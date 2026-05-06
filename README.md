@@ -1,4 +1,4 @@
-# CloudShare Azure CW2
+# CloudShare
 
 Cloud-native coursework project that implements an Asset/Multimedia sharing API and frontend on Azure.
 
@@ -46,7 +46,7 @@ This repository contains:
 
 ## API Endpoints
 
-Base URL (deployed): `https://<function-app-name>.azurewebsites.net/api/assets`
+Base URL (deployed): `https://cloudshareapiasbin2.azurewebsites.net/api/assets`
 
 - `GET /api/assets` -> list assets
 - `GET /api/assets/{id}` -> get asset by ID
@@ -127,8 +127,8 @@ Required GitHub repository secrets:
 ## Outputs
 
 After successful deployment, main URLs are:
-- Function App: `https://<function-app-name>.azurewebsites.net`
-- Frontend App: `https://<frontend-app-name>.azurewebsites.net`
+- Function App: `https://cloudshareapiasbin2.azurewebsites.net`
+- Frontend App (Live): `https://cloudsharewebasbin2.azurewebsites.net`
 
 ## Notes
 
