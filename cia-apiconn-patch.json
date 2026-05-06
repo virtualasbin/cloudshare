@@ -31,9 +31,14 @@
       },
       "actions": {
         "cosmos_endpoint_reference": { "type": "Compose", "inputs": "@parameters('cosmosEndpoint')" },
+        "cosmos_connection_reference": {
+          "type": "Compose",
+          "runAfter": { "cosmos_endpoint_reference": ["Succeeded"] },
+          "inputs": "@parameters('$connections')['cosmosconn']['connectionId']"
+        },
         "create_individual_asset_via_connection": {
           "type": "ApiConnection",
-          "runAfter": { "cosmos_endpoint_reference": ["Succeeded"] },
+          "runAfter": { "cosmos_connection_reference": ["Succeeded"] },
           "inputs": {
             "method": "post",
             "path": "/invokehttprequest",
@@ -43,7 +48,8 @@
               "uri": "@parameters('backendBaseUrl')",
               "headers": {
                 "x-origin": "cia",
-                "x-cosmos-endpoint": "@outputs('cosmos_endpoint_reference')"
+                "x-cosmos-endpoint": "@outputs('cosmos_endpoint_reference')",
+                "x-cosmos-connection": "@outputs('cosmos_connection_reference')"
               },
               "body": "@triggerBody()"
             }
@@ -67,6 +73,11 @@
           "webcontents": {
             "connectionId": "/subscriptions/3fb09375-06e4-457a-bba3-6b54d4f8c1ad/resourceGroups/cloudshare-cw2-rg-fr2/providers/Microsoft.Web/connections/cloudshare-webcontents-conn-2",
             "connectionName": "cloudshare-webcontents-conn-2",
+            "id": "/subscriptions/3fb09375-06e4-457a-bba3-6b54d4f8c1ad/providers/Microsoft.Web/locations/francecentral/managedApis/webcontents"
+          },
+          "cosmosconn": {
+            "connectionId": "/subscriptions/3fb09375-06e4-457a-bba3-6b54d4f8c1ad/resourceGroups/cloudshare-cw2-rg-fr2/providers/Microsoft.Web/connections/cloudshare-cosmos-conn-1",
+            "connectionName": "cloudshare-cosmos-conn-1",
             "id": "/subscriptions/3fb09375-06e4-457a-bba3-6b54d4f8c1ad/providers/Microsoft.Web/locations/francecentral/managedApis/webcontents"
           }
         }
