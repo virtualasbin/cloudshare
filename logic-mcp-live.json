@@ -1,0 +1,233 @@
+﻿{
+  "accessEndpoint": "https://prod-05.francecentral.logic.azure.com:443/workflows/0a72ffe9b8ea4a6da70632a1b94d677b",
+  "changedTime": "2026-05-06T18:43:46.4764992Z",
+  "createdTime": "2026-05-06T18:20:42.9857151Z",
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "resolve_backend_url": {
+        "inputs": "@{if(empty(coalesce(triggerOutputs()?['queries']?['assetId'], triggerBody()?['assetId'])), parameters('backendBaseUrl'), concat(parameters('backendBaseUrl'), '/', coalesce(triggerOutputs()?['queries']?['assetId'], triggerBody()?['assetId'])))}",
+        "type": "Compose"
+      },
+      "route_by_method": {
+        "actions": {
+          "invoke_backend_api_get": {
+            "inputs": {
+              "headers": {
+                "x-origin": "logic-app"
+              },
+              "method": "GET",
+              "uri": "@outputs('resolve_backend_url')"
+            },
+            "type": "Http"
+          },
+          "response_get": {
+            "inputs": {
+              "body": "@body('invoke_backend_api_get')",
+              "statusCode": "@outputs('invoke_backend_api_get')['statusCode']"
+            },
+            "kind": "Http",
+            "runAfter": {
+              "invoke_backend_api_get": [
+                "Succeeded",
+                "Failed"
+              ]
+            },
+            "type": "Response"
+          }
+        },
+        "else": {
+          "actions": {
+            "invoke_backend_api_write": {
+              "inputs": {
+                "body": "@coalesce(triggerBody()?['payload'], triggerBody())",
+                "headers": {
+                  "x-origin": "logic-app"
+                },
+                "method": "@coalesce(triggerBody()?['method'], 'POST')",
+                "uri": "@outputs('resolve_backend_url')"
+              },
+              "type": "Http"
+            },
+            "response_write": {
+              "inputs": {
+                "body": "@body('invoke_backend_api_write')",
+                "statusCode": "@outputs('invoke_backend_api_write')['statusCode']"
+              },
+              "kind": "Http",
+              "runAfter": {
+                "invoke_backend_api_write": [
+                  "Succeeded",
+                  "Failed"
+                ]
+              },
+              "type": "Response"
+            }
+          }
+        },
+        "expression": "@equals(toUpper(coalesce(triggerBody()?['method'], 'GET')), 'GET')",
+        "runAfter": {
+          "resolve_backend_url": [
+            "Succeeded"
+          ]
+        },
+        "type": "If"
+      }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {},
+    "parameters": {
+      "backendBaseUrl": {
+        "type": "String"
+      }
+    },
+    "triggers": {
+      "manual": {
+        "inputs": {
+          "method": "POST",
+          "schema": {
+            "properties": {
+              "assetId": {
+                "type": "string"
+              },
+              "method": {
+                "type": "string"
+              },
+              "payload": {
+                "type": "object"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "kind": "Http",
+        "type": "Request"
+      }
+    }
+  },
+  "endpointsConfiguration": {
+    "connector": {
+      "outgoingIpAddresses": [
+        {
+          "address": "40.89.135.2"
+        },
+        {
+          "address": "40.79.130.208/28"
+        },
+        {
+          "address": "40.79.148.96/27"
+        },
+        {
+          "address": "51.138.215.48/28"
+        },
+        {
+          "address": "51.138.215.64/27"
+        },
+        {
+          "address": "51.11.229.156"
+        },
+        {
+          "address": "51.11.229.148"
+        }
+      ]
+    },
+    "workflow": {
+      "accessEndpointIpAddresses": [
+        {
+          "address": "20.74.20.86"
+        },
+        {
+          "address": "20.74.22.248"
+        },
+        {
+          "address": "20.74.94.80"
+        },
+        {
+          "address": "20.74.91.234"
+        },
+        {
+          "address": "20.74.106.82"
+        },
+        {
+          "address": "20.74.35.121"
+        },
+        {
+          "address": "20.19.63.163"
+        },
+        {
+          "address": "20.19.56.186"
+        }
+      ],
+      "outgoingIpAddresses": [
+        {
+          "address": "20.40.140.149"
+        },
+        {
+          "address": "51.11.237.216"
+        },
+        {
+          "address": "20.74.18.58"
+        },
+        {
+          "address": "20.74.18.36"
+        },
+        {
+          "address": "20.74.22.121"
+        },
+        {
+          "address": "20.74.20.147"
+        },
+        {
+          "address": "20.74.94.62"
+        },
+        {
+          "address": "20.74.88.179"
+        },
+        {
+          "address": "20.74.23.87"
+        },
+        {
+          "address": "20.74.22.119"
+        },
+        {
+          "address": "20.74.106.61"
+        },
+        {
+          "address": "20.74.105.214"
+        },
+        {
+          "address": "20.74.34.113"
+        },
+        {
+          "address": "20.74.33.177"
+        },
+        {
+          "address": "20.19.61.105"
+        },
+        {
+          "address": "20.74.109.28"
+        },
+        {
+          "address": "20.19.113.120"
+        },
+        {
+          "address": "20.74.106.31"
+        }
+      ]
+    }
+  },
+  "id": "/subscriptions/3fb09375-06e4-457a-bba3-6b54d4f8c1ad/resourceGroups/cloudshare-cw2-rg-fr2/providers/Microsoft.Logic/workflows/cloudshare2-logic-mcp",
+  "location": "francecentral",
+  "name": "cloudshare2-logic-mcp",
+  "parameters": {
+    "backendBaseUrl": {
+      "value": "https://cloudshareapiasbin2.azurewebsites.net/api/assets"
+    }
+  },
+  "provisioningState": "Succeeded",
+  "resourceGroup": "cloudshare-cw2-rg-fr2",
+  "state": "Enabled",
+  "type": "Microsoft.Logic/workflows",
+  "version": "08584235138590320718"
+}
+

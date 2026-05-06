@@ -291,6 +291,15 @@ button:disabled {
   font-size: 0.78rem;
 }
 
+.asset-preview {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #1d2f56;
+  background: #070f20;
+}
+
 .asset-id {
   font-family: Consolas, "Courier New", monospace;
 }

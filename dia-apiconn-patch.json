@@ -1,0 +1,87 @@
+﻿{
+  "location": "francecentral",
+  "properties": {
+    "state": "Enabled",
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "backendBaseUrl": {
+          "type": "String",
+          "defaultValue": "https://cloudshareapiasbin2.azurewebsites.net/api/assets"
+        },
+        "$connections": {
+          "type": "Object",
+          "defaultValue": {}
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "Http",
+          "inputs": {
+            "method": "POST",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "assetId": { "type": "string" }
+              },
+              "required": ["assetId"]
+            }
+          }
+        }
+      },
+      "actions": {
+        "resolve_delete_url": {
+          "type": "Compose",
+          "inputs": "@{concat(parameters('backendBaseUrl'), '/', triggerBody()?['assetId'])}"
+        },
+        "delete_individual_asset_via_connection": {
+          "type": "ApiConnection",
+          "runAfter": {
+            "resolve_delete_url": ["Succeeded"]
+          },
+          "inputs": {
+            "method": "post",
+            "path": "/invokehttprequest",
+            "host": {
+              "connection": {
+                "name": "@parameters('$connections')['webcontents']['connectionId']"
+              }
+            },
+            "body": {
+              "method": "DELETE",
+              "uri": "@outputs('resolve_delete_url')",
+              "headers": {
+                "x-origin": "dia"
+              }
+            }
+          }
+        },
+        "response": {
+          "type": "Response",
+          "kind": "Http",
+          "runAfter": {
+            "delete_individual_asset_via_connection": ["Succeeded", "Failed"]
+          },
+          "inputs": {
+            "statusCode": "@{coalesce(body('delete_individual_asset_via_connection')?['statusCode'], 200)}",
+            "body": "@{coalesce(body('delete_individual_asset_via_connection')?['body'], body('delete_individual_asset_via_connection'))}"
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "parameters": {
+      "$connections": {
+        "value": {
+          "webcontents": {
+            "connectionId": "/subscriptions/3fb09375-06e4-457a-bba3-6b54d4f8c1ad/resourceGroups/cloudshare-cw2-rg-fr2/providers/Microsoft.Web/connections/cloudshare-webcontents-conn-2",
+            "connectionName": "cloudshare-webcontents-conn-2",
+            "id": "/subscriptions/3fb09375-06e4-457a-bba3-6b54d4f8c1ad/providers/Microsoft.Web/locations/francecentral/managedApis/webcontents"
+          }
+        }
+      }
+    }
+  }
+}

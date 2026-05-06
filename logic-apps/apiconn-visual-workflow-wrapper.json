@@ -1,0 +1,60 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "$connections": {
+        "type": "Object",
+        "defaultValue": {}
+      }
+    },
+    "triggers": {
+      "manual": {
+        "type": "Request",
+        "kind": "Http",
+        "inputs": {
+          "method": "POST",
+          "schema": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "actions": {
+      "invoke_api_via_connection": {
+        "type": "ApiConnection",
+        "inputs": {
+          "host": {
+            "connection": {
+              "name": "@parameters('$connections')['webcontents']['connectionId']"
+            }
+          },
+          "method": "post",
+          "path": "/invokehttprequest",
+          "body": {
+            "method": "GET",
+            "uri": "https://cloudshareapiasbin2.azurewebsites.net/api/assets",
+            "headers": {
+              "x-origin": "logic-app-apiconnection"
+            }
+          }
+        }
+      },
+      "response": {
+        "type": "Response",
+        "kind": "Http",
+        "runAfter": {
+          "invoke_api_via_connection": [
+            "Succeeded",
+            "Failed"
+          ]
+        },
+        "inputs": {
+          "statusCode": 200,
+          "body": "@body('invoke_api_via_connection')"
+        }
+      }
+    },
+    "outputs": {}
+  }
+}

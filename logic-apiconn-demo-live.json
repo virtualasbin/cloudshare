@@ -1,0 +1,184 @@
+﻿{
+  "accessEndpoint": "https://prod-12.francecentral.logic.azure.com:443/workflows/7133c967a8ec40a9a0ea20277ed5e66e",
+  "changedTime": "2026-05-06T21:53:16.4247262Z",
+  "createdTime": "2026-05-06T21:53:16.4399181Z",
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "invoke_api_via_connection": {
+        "inputs": {
+          "body": {
+            "headers": {
+              "x-origin": "logic-app-apiconnection"
+            },
+            "method": "GET",
+            "uri": "https://cloudshareapiasbin2.azurewebsites.net/api/assets"
+          },
+          "host": {
+            "connection": {
+              "name": "@parameters('$connections')['webcontents']['connectionId']"
+            }
+          },
+          "method": "post",
+          "path": "/invokehttprequest"
+        },
+        "type": "ApiConnection"
+      },
+      "response": {
+        "inputs": {
+          "body": "@body('invoke_api_via_connection')",
+          "statusCode": 200
+        },
+        "kind": "Http",
+        "runAfter": {
+          "invoke_api_via_connection": [
+            "Succeeded",
+            "Failed"
+          ]
+        },
+        "type": "Response"
+      }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {},
+    "parameters": {
+      "$connections": {
+        "defaultValue": {},
+        "type": "Object"
+      }
+    },
+    "triggers": {
+      "manual": {
+        "inputs": {
+          "method": "POST",
+          "schema": {
+            "type": "object"
+          }
+        },
+        "kind": "Http",
+        "type": "Request"
+      }
+    }
+  },
+  "endpointsConfiguration": {
+    "connector": {
+      "outgoingIpAddresses": [
+        {
+          "address": "40.89.135.2"
+        },
+        {
+          "address": "40.79.130.208/28"
+        },
+        {
+          "address": "40.79.148.96/27"
+        },
+        {
+          "address": "51.138.215.48/28"
+        },
+        {
+          "address": "51.138.215.64/27"
+        },
+        {
+          "address": "51.11.229.156"
+        },
+        {
+          "address": "51.11.229.148"
+        }
+      ]
+    },
+    "workflow": {
+      "accessEndpointIpAddresses": [
+        {
+          "address": "20.74.20.86"
+        },
+        {
+          "address": "20.74.22.248"
+        },
+        {
+          "address": "20.74.94.80"
+        },
+        {
+          "address": "20.74.91.234"
+        },
+        {
+          "address": "20.74.106.82"
+        },
+        {
+          "address": "20.74.35.121"
+        },
+        {
+          "address": "20.19.63.163"
+        },
+        {
+          "address": "20.19.56.186"
+        }
+      ],
+      "outgoingIpAddresses": [
+        {
+          "address": "20.40.140.149"
+        },
+        {
+          "address": "51.11.237.216"
+        },
+        {
+          "address": "20.74.18.58"
+        },
+        {
+          "address": "20.74.18.36"
+        },
+        {
+          "address": "20.74.22.121"
+        },
+        {
+          "address": "20.74.20.147"
+        },
+        {
+          "address": "20.74.94.62"
+        },
+        {
+          "address": "20.74.88.179"
+        },
+        {
+          "address": "20.74.23.87"
+        },
+        {
+          "address": "20.74.22.119"
+        },
+        {
+          "address": "20.74.106.61"
+        },
+        {
+          "address": "20.74.105.214"
+        },
+        {
+          "address": "20.74.34.113"
+        },
+        {
+          "address": "20.74.33.177"
+        },
+        {
+          "address": "20.19.61.105"
+        },
+        {
+          "address": "20.74.109.28"
+        },
+        {
+          "address": "20.19.113.120"
+        },
+        {
+          "address": "20.74.106.31"
+        }
+      ]
+    }
+  },
+  "id": "/subscriptions/3fb09375-06e4-457a-bba3-6b54d4f8c1ad/resourceGroups/cloudshare-cw2-rg-fr2/providers/Microsoft.Logic/workflows/cloudshare2-logic-apiconn-demo",
+  "location": "francecentral",
+  "name": "cloudshare2-logic-apiconn-demo",
+  "parameters": {},
+  "provisioningState": "Succeeded",
+  "resourceGroup": "cloudshare-cw2-rg-fr2",
+  "state": "Enabled",
+  "type": "Microsoft.Logic/workflows",
+  "version": "08584235024890801112"
+}
+

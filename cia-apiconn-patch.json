@@ -1,0 +1,84 @@
+﻿{
+  "location": "francecentral",
+  "properties": {
+    "state": "Enabled",
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "backendBaseUrl": {
+          "type": "String",
+          "defaultValue": "https://cloudshareapiasbin2.azurewebsites.net/api/assets"
+        },
+        "$connections": {
+          "type": "Object",
+          "defaultValue": {}
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "Http",
+          "inputs": {
+            "method": "POST",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "contentType": { "type": "string" },
+                "fileBase64": { "type": "string" },
+                "tags": { "type": "array", "items": { "type": "string" } }
+              },
+              "required": ["name", "contentType", "fileBase64"]
+            }
+          }
+        }
+      },
+      "actions": {
+        "create_individual_asset_via_connection": {
+          "type": "ApiConnection",
+          "inputs": {
+            "method": "post",
+            "path": "/invokehttprequest",
+            "host": {
+              "connection": {
+                "name": "@parameters('$connections')['webcontents']['connectionId']"
+              }
+            },
+            "body": {
+              "method": "POST",
+              "uri": "@parameters('backendBaseUrl')",
+              "headers": {
+                "x-origin": "cia"
+              },
+              "body": "@triggerBody()"
+            }
+          }
+        },
+        "response": {
+          "type": "Response",
+          "kind": "Http",
+          "runAfter": {
+            "create_individual_asset_via_connection": ["Succeeded", "Failed"]
+          },
+          "inputs": {
+            "statusCode": "@{coalesce(body('create_individual_asset_via_connection')?['statusCode'], 200)}",
+            "body": "@{coalesce(body('create_individual_asset_via_connection')?['body'], body('create_individual_asset_via_connection'))}"
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "parameters": {
+      "$connections": {
+        "value": {
+          "webcontents": {
+            "connectionId": "/subscriptions/3fb09375-06e4-457a-bba3-6b54d4f8c1ad/resourceGroups/cloudshare-cw2-rg-fr2/providers/Microsoft.Web/connections/cloudshare-webcontents-conn-2",
+            "connectionName": "cloudshare-webcontents-conn-2",
+            "id": "/subscriptions/3fb09375-06e4-457a-bba3-6b54d4f8c1ad/providers/Microsoft.Web/locations/francecentral/managedApis/webcontents"
+          }
+        }
+      }
+    }
+  }
+}

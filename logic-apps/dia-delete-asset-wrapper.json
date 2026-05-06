@@ -1,0 +1,64 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "backendBaseUrl": {
+        "type": "String",
+        "defaultValue": "https://cloudshareapiasbin2.azurewebsites.net/api/assets"
+      }
+    },
+    "triggers": {
+      "manual": {
+        "type": "Request",
+        "kind": "Http",
+        "inputs": {
+          "method": "POST",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "assetId": { "type": "string" }
+            },
+            "required": ["assetId"]
+          }
+        }
+      }
+    },
+    "actions": {
+      "resolve_delete_url": {
+        "type": "Compose",
+        "inputs": "@{concat(parameters('backendBaseUrl'), '/', triggerBody()?['assetId'])}"
+      },
+      "delete_individual_asset": {
+        "type": "Http",
+        "runAfter": {
+          "resolve_delete_url": [
+            "Succeeded"
+          ]
+        },
+        "inputs": {
+          "method": "DELETE",
+          "uri": "@outputs('resolve_delete_url')",
+          "headers": {
+            "x-origin": "dia"
+          }
+        }
+      },
+      "response": {
+        "type": "Response",
+        "kind": "Http",
+        "runAfter": {
+          "delete_individual_asset": [
+            "Succeeded",
+            "Failed"
+          ]
+        },
+        "inputs": {
+          "statusCode": "@outputs('delete_individual_asset')['statusCode']",
+          "body": "@body('delete_individual_asset')"
+        }
+      }
+    },
+    "outputs": {}
+  }
+}
