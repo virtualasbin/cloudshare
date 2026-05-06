@@ -1,0 +1,69 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "backendBaseUrl": {
+      "type": "String"
+    }
+  },
+  "triggers": {
+    "manual": {
+      "type": "Request",
+      "kind": "Http",
+      "inputs": {
+        "method": "POST",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "method": {
+              "type": "string"
+            },
+            "payload": {
+              "type": "object"
+            },
+            "assetId": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "actions": {
+    "resolve_backend_url": {
+      "type": "Compose",
+      "inputs": "@{if(empty(coalesce(triggerOutputs()['queries']?['assetId'], triggerBody()?['assetId'])), parameters('backendBaseUrl'), concat(parameters('backendBaseUrl'), '/', coalesce(triggerOutputs()['queries']?['assetId'], triggerBody()?['assetId'])))}"
+    },
+    "invoke_backend_api": {
+      "type": "Http",
+      "runAfter": {
+        "resolve_backend_url": [
+          "Succeeded"
+        ]
+      },
+      "inputs": {
+        "method": "@coalesce(triggerBody()?['method'], 'GET')",
+        "uri": "@outputs('resolve_backend_url')",
+        "headers": {
+          "x-origin": "logic-app"
+        },
+        "body": "@coalesce(triggerBody()?['payload'], triggerBody())"
+      }
+    },
+    "response_to_client": {
+      "type": "Response",
+      "kind": "Http",
+      "runAfter": {
+        "invoke_backend_api": [
+          "Succeeded",
+          "Failed"
+        ]
+      },
+      "inputs": {
+        "statusCode": "@outputs('invoke_backend_api')['statusCode']",
+        "body": "@body('invoke_backend_api')"
+      }
+    }
+  },
+  "outputs": {}
+}

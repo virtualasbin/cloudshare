@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CloudShare Frontend</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>CloudShare Asset Manager</h1>
+      <section class="panel">
+        <label for="apiBaseUrl">API Base URL</label>
+        <input id="apiBaseUrl" type="url" placeholder="Function URL (/api/assets) or Logic App trigger URL" />
+        <button id="saveApiUrl">Save URL</button>
+      </section>
+
+      <section class="panel">
+        <h2>Upload Asset</h2>
+        <form id="uploadForm">
+          <label for="assetName">Name</label>
+          <input id="assetName" type="text" required />
+          <label for="assetType">Content Type</label>
+          <input id="assetType" type="text" value="image/png" required />
+          <label for="assetTags">Tags (comma-separated)</label>
+          <input id="assetTags" type="text" />
+          <label for="assetFile">File</label>
+          <input id="assetFile" type="file" accept="image/*" required />
+          <button type="submit">Upload</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Assets</h2>
+          <button id="refreshAssets">Refresh</button>
+        </div>
+        <ul id="assetList"></ul>
+      </section>
+
+      <section class="panel">
+        <h2>Update Asset Metadata</h2>
+        <form id="updateForm">
+          <label for="updateAssetId">Asset ID</label>
+          <input id="updateAssetId" type="text" required />
+          <label for="updateAssetName">New Name</label>
+          <input id="updateAssetName" type="text" />
+          <label for="updateAssetType">New Content Type</label>
+          <input id="updateAssetType" type="text" />
+          <label for="updateAssetTags">New Tags (comma-separated)</label>
+          <input id="updateAssetTags" type="text" />
+          <button type="submit">Update</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Log</h2>
+        <pre id="logOutput"></pre>
+      </section>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

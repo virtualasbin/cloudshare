@@ -1,0 +1,32 @@
+{
+  "name": "cloudshare-azure-cw2",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/src/functions/assetsApi.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@azure/cosmos": "^4.3.0",
+    "@azure/functions": "^4.6.0",
+    "@azure/storage-blob": "^12.29.1",
+    "uuid": "^11.1.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "@types/uuid": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.33.1",
+    "@typescript-eslint/parser": "^8.33.1",
+    "eslint": "^9.28.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.vscode/
+coverage/
+local.settings.json
+*.zip
+function-package/

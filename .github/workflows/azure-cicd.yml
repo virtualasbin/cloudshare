@@ -1,0 +1,80 @@
+name: Azure CI CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: quality
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - uses: azure/cli@v2
+        with:
+          inlineScript: |
+            az deployment group create \
+              --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+              --template-file infra/main.bicep \
+              --parameters projectName=cloudshare functionAppName="${{ secrets.AZURE_FUNCTION_APP_NAME }}" frontendAppName="${{ secrets.AZURE_FRONTEND_APP_NAME }}"
+      - run: |
+          rm -rf function-package
+          mkdir -p function-package
+          cp -R dist/* function-package/
+          cp host.json package.json package-lock.json function-package/
+          npm ci --omit=dev
+          cp -R node_modules function-package/
+          cd function-package
+          zip -r ../function-package.zip .
+      - uses: azure/cli@v2
+        with:
+          inlineScript: |
+            az functionapp deployment source config-zip \
+              --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+              --name "${{ secrets.AZURE_FUNCTION_APP_NAME }}" \
+              --src function-package.zip
+      - run: |
+          cd frontend
+          zip -r ../frontend-package.zip .
+      - uses: azure/cli@v2
+        with:
+          inlineScript: |
+            az webapp deploy \
+              --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+              --name "${{ secrets.AZURE_FRONTEND_APP_NAME }}" \
+              --src-path frontend-package.zip \
+              --type zip
