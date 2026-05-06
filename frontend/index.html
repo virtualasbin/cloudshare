@@ -3,21 +3,45 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CloudShare Frontend</title>
+    <title>CloudShare</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <main class="container">
-      <h1>CloudShare Asset Manager</h1>
-      <section class="panel">
-        <label for="apiBaseUrl">API Base URL</label>
-        <input id="apiBaseUrl" type="url" placeholder="Function URL (/api/assets) or Logic App trigger URL" />
-        <button id="saveApiUrl">Save URL</button>
-      </section>
+      <header class="hero">
+        <div>
+          <h1>CloudShare Asset Manager</h1>
+          <p>Professional asset dashboard for upload, metadata updates, and lifecycle management.</p>
+        </div>
+        <span id="connectionStatus" class="status-badge" data-status="idle">Not Connected</span>
+      </header>
 
       <section class="panel">
+        <div class="panel-header">
+          <h2>API Configuration</h2>
+          <button id="testConnection" class="button-secondary" type="button">Test Connection</button>
+        </div>
+        <div class="field-grid">
+          <label for="apiBaseUrl">API Base URL</label>
+          <input
+            id="apiBaseUrl"
+            type="url"
+            placeholder="Function URL (/api/assets) or Logic App trigger URL"
+          />
+          <div class="preset-row">
+            <button id="useFunctionApi" class="button-secondary preset-chip" type="button">Use Function API</button>
+            <button id="useLogicApp" class="button-secondary preset-chip" type="button">Use Logic App</button>
+          </div>
+          <p class="helper-text">Choose a preset, then click <strong>Save URL</strong> and <strong>Test Connection</strong>.</p>
+        </div>
+        <div class="actions-row">
+          <button id="saveApiUrl" type="button">Save URL</button>
+        </div>
+      </section>
+
+      <section class="panel two-column">
         <h2>Upload Asset</h2>
-        <form id="uploadForm">
+        <form id="uploadForm" class="form-grid">
           <label for="assetName">Name</label>
           <input id="assetName" type="text" required />
           <label for="assetType">Content Type</label>
@@ -26,21 +50,22 @@
           <input id="assetTags" type="text" />
           <label for="assetFile">File</label>
           <input id="assetFile" type="file" accept="image/*" required />
-          <button type="submit">Upload</button>
+          <button id="uploadButton" type="submit">Upload Asset</button>
         </form>
       </section>
 
       <section class="panel">
         <div class="panel-header">
           <h2>Assets</h2>
-          <button id="refreshAssets">Refresh</button>
+          <button id="refreshAssets" class="button-secondary" type="button">Refresh</button>
         </div>
         <ul id="assetList"></ul>
+        <p id="emptyState" class="empty-state">No assets yet. Upload your first file.</p>
       </section>
 
-      <section class="panel">
+      <section class="panel two-column">
         <h2>Update Asset Metadata</h2>
-        <form id="updateForm">
+        <form id="updateForm" class="form-grid">
           <label for="updateAssetId">Asset ID</label>
           <input id="updateAssetId" type="text" required />
           <label for="updateAssetName">New Name</label>
@@ -49,12 +74,15 @@
           <input id="updateAssetType" type="text" />
           <label for="updateAssetTags">New Tags (comma-separated)</label>
           <input id="updateAssetTags" type="text" />
-          <button type="submit">Update</button>
+          <button id="updateButton" type="submit">Update Metadata</button>
         </form>
       </section>
 
       <section class="panel">
-        <h2>Log</h2>
+        <div class="panel-header">
+          <h2>Activity Log</h2>
+          <button id="clearLog" class="button-secondary" type="button">Clear</button>
+        </div>
         <pre id="logOutput"></pre>
       </section>
     </main>

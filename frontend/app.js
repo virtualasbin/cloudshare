@@ -5,6 +5,18 @@ const updateForm = document.getElementById("updateForm");
 const refreshButton = document.getElementById("refreshAssets");
 const assetList = document.getElementById("assetList");
 const logOutput = document.getElementById("logOutput");
+const emptyState = document.getElementById("emptyState");
+const connectionStatus = document.getElementById("connectionStatus");
+const testConnectionButton = document.getElementById("testConnection");
+const clearLogButton = document.getElementById("clearLog");
+const uploadButton = document.getElementById("uploadButton");
+const updateButton = document.getElementById("updateButton");
+const useFunctionApiButton = document.getElementById("useFunctionApi");
+const useLogicAppButton = document.getElementById("useLogicApp");
+
+const FUNCTION_API_PRESET = "https://cloudshareapiasbin2.azurewebsites.net/api/assets";
+const LOGIC_APP_PRESET =
+  "https://prod-01.francecentral.logic.azure.com:443/workflows/95aae4a30eb141e985bd2c62e31aef68/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=AEIp26i5qpWf63OFeJgISaiygdVUOm4iYPOC9auen1g";
 
 function getApiBaseUrl() {
   return localStorage.getItem("cloudshare-api-base-url") || "";
@@ -17,6 +29,63 @@ function setApiBaseUrl(url) {
 function log(message) {
   const timestamp = new Date().toISOString();
   logOutput.textContent = `[${timestamp}] ${message}\n${logOutput.textContent}`;
+}
+
+function getErrorMessage(error) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
+
+function setConnectionStatus(status, message) {
+  if (!connectionStatus) {
+    return;
+  }
+  connectionStatus.dataset.status = status;
+  connectionStatus.textContent = message;
+}
+
+function setButtonBusy(button, busy, busyText, idleText) {
+  if (!button) {
+    return;
+  }
+  button.disabled = busy;
+  button.textContent = busy ? busyText : idleText;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function formatBytes(bytes) {
+  const size = Number(bytes);
+  if (!Number.isFinite(size) || size < 0) {
+    return "N/A";
+  }
+  if (size < 1024) {
+    return `${size} B`;
+  }
+  if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(1)} KB`;
+  }
+  return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function formatDate(value) {
+  if (!value) {
+    return "N/A";
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "N/A";
+  }
+  return date.toLocaleString();
 }
 
 function ensureApiBase() {
@@ -81,19 +150,33 @@ function readFileAsBase64(file) {
 
 function renderAssets(assets) {
   assetList.innerHTML = "";
+  if (emptyState) {
+    emptyState.style.display = assets.length === 0 ? "block" : "none";
+  }
+
   assets.forEach((asset) => {
     const item = document.createElement("li");
     item.className = "asset-item";
-    const tags = Array.isArray(asset.tags) ? asset.tags.join(", ") : "";
+    const tags = Array.isArray(asset.tags) ? asset.tags : [];
+    const tagsHtml =
+      tags.length > 0
+        ? tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")
+        : '<span class="tag">No tags</span>';
+
     item.innerHTML = `
-      <strong>${asset.name}</strong>
-      <span>ID: ${asset.id}</span>
-      <span>Type: ${asset.contentType}</span>
-      <span>Size: ${asset.size} bytes</span>
-      <span>Tags: ${tags}</span>
-      <a href="${asset.blobUrl}" target="_blank" rel="noreferrer">Open Blob</a>
+      <div class="asset-title-row">
+        <h3 class="asset-title">${escapeHtml(asset.name || "Untitled Asset")}</h3>
+      </div>
+      <div class="asset-meta">
+        <span><strong>ID:</strong> <span class="asset-id">${escapeHtml(asset.id || "N/A")}</span></span>
+        <span><strong>Type:</strong> ${escapeHtml(asset.contentType || "N/A")}</span>
+        <span><strong>Size:</strong> ${formatBytes(asset.size)}</span>
+        <span><strong>Updated:</strong> ${formatDate(asset.updatedAt || asset.createdAt)}</span>
+      </div>
+      <div class="tag-list">${tagsHtml}</div>
+      <a class="asset-link" href="${escapeHtml(asset.blobUrl || "#")}" target="_blank" rel="noreferrer">Open Blob</a>
       <div class="asset-actions">
-        <button data-action="delete" data-id="${asset.id}">Delete</button>
+        <button class="danger" data-action="delete" data-id="${escapeHtml(asset.id || "")}">Delete</button>
       </div>
     `;
     assetList.appendChild(item);
@@ -107,6 +190,7 @@ async function fetchAssets() {
   }
   const data = await response.json();
   renderAssets(data);
+  setConnectionStatus("ok", "Connected");
   log(`Loaded ${data.length} assets`);
 }
 
@@ -141,23 +225,38 @@ async function updateAsset(id, payload) {
   await fetchAssets();
 }
 
-saveApiUrlButton.addEventListener("click", () => {
+function saveCurrentApiUrl() {
   const url = apiBaseInput.value.trim().replace(/\/+$/, "");
+  if (!url) {
+    setConnectionStatus("error", "URL Required");
+    log("Please enter a valid API URL");
+    return;
+  }
   setApiBaseUrl(url);
+  setConnectionStatus("idle", "Saved");
   log("Saved API base URL");
+}
+
+saveApiUrlButton.addEventListener("click", () => {
+  saveCurrentApiUrl();
 });
 
 refreshButton.addEventListener("click", async () => {
   try {
+    setButtonBusy(refreshButton, true, "Refreshing...", "Refresh");
     await fetchAssets();
   } catch (error) {
-    log(error.message);
+    setConnectionStatus("error", "Connection Failed");
+    log(getErrorMessage(error));
+  } finally {
+    setButtonBusy(refreshButton, false, "Refreshing...", "Refresh");
   }
 });
 
 uploadForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   try {
+    setButtonBusy(uploadButton, true, "Uploading...", "Upload Asset");
     const name = document.getElementById("assetName").value.trim();
     const contentType = document.getElementById("assetType").value.trim();
     const tags = document
@@ -174,13 +273,17 @@ uploadForm.addEventListener("submit", async (event) => {
     await uploadAsset({ name, contentType, fileBase64, tags });
     uploadForm.reset();
   } catch (error) {
-    log(error.message);
+    setConnectionStatus("error", "Operation Failed");
+    log(getErrorMessage(error));
+  } finally {
+    setButtonBusy(uploadButton, false, "Uploading...", "Upload Asset");
   }
 });
 
 updateForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   try {
+    setButtonBusy(updateButton, true, "Updating...", "Update Metadata");
     const id = document.getElementById("updateAssetId").value.trim();
     const name = document.getElementById("updateAssetName").value.trim();
     const contentType = document.getElementById("updateAssetType").value.trim();
@@ -204,7 +307,10 @@ updateForm.addEventListener("submit", async (event) => {
     await updateAsset(id, payload);
     updateForm.reset();
   } catch (error) {
-    log(error.message);
+    setConnectionStatus("error", "Operation Failed");
+    log(getErrorMessage(error));
+  } finally {
+    setButtonBusy(updateButton, false, "Updating...", "Update Metadata");
   }
 });
 
@@ -223,8 +329,42 @@ assetList.addEventListener("click", async (event) => {
   try {
     await deleteAsset(id);
   } catch (error) {
-    log(error.message);
+    setConnectionStatus("error", "Operation Failed");
+    log(getErrorMessage(error));
   }
 });
 
 apiBaseInput.value = getApiBaseUrl();
+
+testConnectionButton.addEventListener("click", async () => {
+  try {
+    setButtonBusy(testConnectionButton, true, "Testing...", "Test Connection");
+    await fetchAssets();
+  } catch (error) {
+    setConnectionStatus("error", "Connection Failed");
+    log(getErrorMessage(error));
+  } finally {
+    setButtonBusy(testConnectionButton, false, "Testing...", "Test Connection");
+  }
+});
+
+clearLogButton.addEventListener("click", () => {
+  logOutput.textContent = "";
+});
+
+useFunctionApiButton.addEventListener("click", () => {
+  apiBaseInput.value = FUNCTION_API_PRESET;
+  saveCurrentApiUrl();
+});
+
+useLogicAppButton.addEventListener("click", () => {
+  apiBaseInput.value = LOGIC_APP_PRESET;
+  saveCurrentApiUrl();
+});
+
+if (getApiBaseUrl()) {
+  fetchAssets().catch((error) => {
+    setConnectionStatus("error", "Connection Failed");
+    log(getErrorMessage(error));
+  });
+}
