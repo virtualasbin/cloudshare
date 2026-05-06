@@ -22,7 +22,7 @@ const FUNCTION_API_FALLBACK = "https://cloudshareapiasbin2.azurewebsites.net/api
 const CREATE_API_URL =
   "https://prod-24.francecentral.logic.azure.com:443/workflows/60147b33bee94f3fa37eba55a37c1e82/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=nHsCKN75ZhuYuIzs7hwFJnuaBNxNoXUc9sFZ2v7Bg00";
 const DELETE_API_URL =
-  "https://prod-23.francecentral.logic.azure.com:443/workflows/9dc848d9327940539f8df0634e492f3a/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=HUBeLoVeTZrnRe9qzJbdHyeO07z0abfr3t9A2GitDXA";
+  "https://prod-17.francecentral.logic.azure.com:443/workflows/cd2d3269e6c34321a3745afd4195e77f/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=U0SsqbjQ5qeZ6_t7r0PdKw_bLL7xJlSQ-F3kE6GAZVo";
 const API_BASE_URL = FUNCTION_API_FALLBACK;
 const SECONDARY_API_BASE_URL = "";
 const PREVIEW_CACHE_KEY = "cloudshare.previewCache.v1";
