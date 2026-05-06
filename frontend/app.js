@@ -1,35 +1,26 @@
-const apiBaseInput = document.getElementById("apiBaseUrl");
-const saveApiUrlButton = document.getElementById("saveApiUrl");
 const uploadForm = document.getElementById("uploadForm");
 const updateForm = document.getElementById("updateForm");
 const refreshButton = document.getElementById("refreshAssets");
 const assetList = document.getElementById("assetList");
 const logOutput = document.getElementById("logOutput");
 const emptyState = document.getElementById("emptyState");
+const searchAssetsInput = document.getElementById("searchAssets");
+const filterTypeSelect = document.getElementById("filterType");
+const selectedFileText = document.getElementById("selectedFileText");
 const connectionStatus = document.getElementById("connectionStatus");
-const testConnectionButton = document.getElementById("testConnection");
 const clearLogButton = document.getElementById("clearLog");
 const uploadButton = document.getElementById("uploadButton");
 const updateButton = document.getElementById("updateButton");
-const useFunctionApiButton = document.getElementById("useFunctionApi");
-const useLogicAppButton = document.getElementById("useLogicApp");
+const statTotal = document.getElementById("statTotal");
+const statImages = document.getElementById("statImages");
+const statVideos = document.getElementById("statVideos");
+const statOther = document.getElementById("statOther");
 
-const API_STORAGE_KEY = "cloudshare-api-base-url";
-const FUNCTION_API_PRESET = "https://cloudshareapiasbin2.azurewebsites.net/api/assets";
 const LOGIC_APP_PRESET =
   "https://prod-05.francecentral.logic.azure.com:443/workflows/0a72ffe9b8ea4a6da70632a1b94d677b/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=oDsx8V2T9ubeU8b0-DMPaMqgeY76Z8Mt3k-6BeUSqzY";
+const API_BASE_URL = LOGIC_APP_PRESET;
 
-function getStoredApiBaseUrl() {
-  return localStorage.getItem(API_STORAGE_KEY) || "";
-}
-
-function getApiBaseUrl() {
-  return getStoredApiBaseUrl() || FUNCTION_API_PRESET;
-}
-
-function setApiBaseUrl(url) {
-  localStorage.setItem(API_STORAGE_KEY, url);
-}
+let allAssets = [];
 
 function log(message) {
   const timestamp = new Date().toISOString();
@@ -44,17 +35,11 @@ function getErrorMessage(error) {
 }
 
 function setConnectionStatus(status, message) {
-  if (!connectionStatus) {
-    return;
-  }
   connectionStatus.dataset.status = status;
   connectionStatus.textContent = message;
 }
 
 function setButtonBusy(button, busy, busyText, idleText) {
-  if (!button) {
-    return;
-  }
   button.disabled = busy;
   button.textContent = busy ? busyText : idleText;
 }
@@ -93,10 +78,17 @@ function formatDate(value) {
   return date.toLocaleString();
 }
 
+function classifyAsset(contentType) {
+  const type = String(contentType || "").toLowerCase();
+  if (type.startsWith("image/")) return "image";
+  if (type.startsWith("video/")) return "video";
+  return "other";
+}
+
 function ensureApiBase() {
-  const value = getApiBaseUrl();
+  const value = API_BASE_URL;
   if (!value) {
-    throw new Error("Set API Base URL first");
+    throw new Error("API base URL is not configured");
   }
   return value;
 }
@@ -116,23 +108,44 @@ function buildAssetUrl(base, id) {
   return `${base}/${encodeURIComponent(id)}`;
 }
 
+function getFilteredAssets() {
+  const searchText = searchAssetsInput.value.trim().toLowerCase();
+  const filterType = filterTypeSelect.value;
+  return allAssets.filter((asset) => {
+    const type = classifyAsset(asset.contentType);
+    if (filterType !== "all" && type !== filterType) {
+      return false;
+    }
+    if (!searchText) {
+      return true;
+    }
+    const haystack = `${asset.name || ""} ${asset.id || ""} ${(asset.tags || []).join(" ")}`.toLowerCase();
+    return haystack.includes(searchText);
+  });
+}
+
+function updateStats(assets) {
+  const total = assets.length;
+  const images = assets.filter((asset) => classifyAsset(asset.contentType) === "image").length;
+  const videos = assets.filter((asset) => classifyAsset(asset.contentType) === "video").length;
+  const other = total - images - videos;
+  statTotal.textContent = String(total);
+  statImages.textContent = String(images);
+  statVideos.textContent = String(videos);
+  statOther.textContent = String(other);
+}
+
 async function sendApiRequest({ method, id, payload }) {
   const base = ensureApiBase();
   if (isLogicAppUrl(base)) {
-    const body = {
-      method,
-      payload,
-      assetId: id
-    };
+    const body = { method, payload, assetId: id };
     return fetch(buildAssetUrl(base, id), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body)
     });
   }
-  const requestInit = {
-    method
-  };
+  const requestInit = { method };
   if (payload !== undefined) {
     requestInit.headers = { "content-type": "application/json" };
     requestInit.body = JSON.stringify(payload);
@@ -145,8 +158,7 @@ function readFileAsBase64(file) {
     const reader = new FileReader();
     reader.onload = () => {
       const result = String(reader.result);
-      const base64 = result.split(",")[1] || "";
-      resolve(base64);
+      resolve(result.split(",")[1] || "");
     };
     reader.onerror = reject;
     reader.readAsDataURL(file);
@@ -155,18 +167,14 @@ function readFileAsBase64(file) {
 
 function renderAssets(assets) {
   assetList.innerHTML = "";
-  if (emptyState) {
-    emptyState.style.display = assets.length === 0 ? "block" : "none";
-  }
+  emptyState.style.display = assets.length === 0 ? "block" : "none";
 
   assets.forEach((asset) => {
     const item = document.createElement("li");
     item.className = "asset-item";
     const tags = Array.isArray(asset.tags) ? asset.tags : [];
     const tagsHtml =
-      tags.length > 0
-        ? tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")
-        : '<span class="tag">No tags</span>';
+      tags.length > 0 ? tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("") : '<span class="tag">No tags</span>';
 
     item.innerHTML = `
       <div class="asset-title-row">
@@ -181,6 +189,7 @@ function renderAssets(assets) {
       <div class="tag-list">${tagsHtml}</div>
       <a class="asset-link" href="${escapeHtml(asset.blobUrl || "#")}" target="_blank" rel="noreferrer">Open Blob</a>
       <div class="asset-actions">
+        <button class="button-secondary" data-action="edit" data-id="${escapeHtml(asset.id || "")}">Edit</button>
         <button class="danger" data-action="delete" data-id="${escapeHtml(asset.id || "")}">Delete</button>
       </div>
     `;
@@ -194,9 +203,11 @@ async function fetchAssets() {
     throw new Error(`Fetch failed: ${response.status}`);
   }
   const data = await response.json();
-  renderAssets(data);
+  allAssets = Array.isArray(data) ? data : [];
+  updateStats(allAssets);
+  renderAssets(getFilteredAssets());
   setConnectionStatus("ok", "Connected");
-  log(`Loaded ${data.length} assets`);
+  log(`Loaded ${allAssets.length} assets`);
 }
 
 async function uploadAsset(formData) {
@@ -230,22 +241,6 @@ async function updateAsset(id, payload) {
   await fetchAssets();
 }
 
-function saveCurrentApiUrl() {
-  const url = apiBaseInput.value.trim().replace(/\/+$/, "");
-  if (!url) {
-    setConnectionStatus("error", "URL Required");
-    log("Please enter a valid API URL");
-    return;
-  }
-  setApiBaseUrl(url);
-  setConnectionStatus("idle", "Saved");
-  log("Saved API base URL");
-}
-
-saveApiUrlButton.addEventListener("click", () => {
-  saveCurrentApiUrl();
-});
-
 refreshButton.addEventListener("click", async () => {
   try {
     setButtonBusy(refreshButton, true, "Refreshing...", "Refresh");
@@ -261,7 +256,7 @@ refreshButton.addEventListener("click", async () => {
 uploadForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   try {
-    setButtonBusy(uploadButton, true, "Uploading...", "Upload Asset");
+    setButtonBusy(uploadButton, true, "Uploading...", "Upload To Library");
     const name = document.getElementById("assetName").value.trim();
     const contentType = document.getElementById("assetType").value.trim();
     const tags = document
@@ -274,32 +269,30 @@ uploadForm.addEventListener("submit", async (event) => {
       throw new Error("Select a file first");
     }
     const file = fileInput.files[0];
+    selectedFileText.textContent = file.name;
     const fileBase64 = await readFileAsBase64(file);
     await uploadAsset({ name, contentType, fileBase64, tags });
     uploadForm.reset();
+    selectedFileText.textContent = "No file selected";
   } catch (error) {
     setConnectionStatus("error", "Operation Failed");
     log(getErrorMessage(error));
   } finally {
-    setButtonBusy(uploadButton, false, "Uploading...", "Upload Asset");
+    setButtonBusy(uploadButton, false, "Uploading...", "Upload To Library");
   }
 });
 
 updateForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   try {
-    setButtonBusy(updateButton, true, "Updating...", "Update Metadata");
+    setButtonBusy(updateButton, true, "Saving...", "Save Changes");
     const id = document.getElementById("updateAssetId").value.trim();
     const name = document.getElementById("updateAssetName").value.trim();
     const contentType = document.getElementById("updateAssetType").value.trim();
     const tagsRaw = document.getElementById("updateAssetTags").value.trim();
     const payload = {};
-    if (name) {
-      payload.name = name;
-    }
-    if (contentType) {
-      payload.contentType = contentType;
-    }
+    if (name) payload.name = name;
+    if (contentType) payload.contentType = contentType;
     if (tagsRaw) {
       payload.tags = tagsRaw
         .split(",")
@@ -315,22 +308,30 @@ updateForm.addEventListener("submit", async (event) => {
     setConnectionStatus("error", "Operation Failed");
     log(getErrorMessage(error));
   } finally {
-    setButtonBusy(updateButton, false, "Updating...", "Update Metadata");
+    setButtonBusy(updateButton, false, "Saving...", "Save Changes");
   }
 });
 
 assetList.addEventListener("click", async (event) => {
   const target = event.target;
-  if (!(target instanceof HTMLElement)) {
-    return;
-  }
-  if (target.dataset.action !== "delete") {
-    return;
-  }
+  if (!(target instanceof HTMLElement)) return;
+
   const id = target.dataset.id;
-  if (!id) {
+  if (!id) return;
+
+  if (target.dataset.action === "edit") {
+    const asset = allAssets.find((item) => item.id === id);
+    if (!asset) return;
+    document.getElementById("updateAssetId").value = asset.id || "";
+    document.getElementById("updateAssetName").value = asset.name || "";
+    document.getElementById("updateAssetType").value = asset.contentType || "";
+    document.getElementById("updateAssetTags").value = Array.isArray(asset.tags) ? asset.tags.join(", ") : "";
+    log(`Selected ${id} for editing.`);
     return;
   }
+
+  if (target.dataset.action !== "delete") return;
+
   try {
     await deleteAsset(id);
   } catch (error) {
@@ -339,41 +340,27 @@ assetList.addEventListener("click", async (event) => {
   }
 });
 
-const storedApiBase = getStoredApiBaseUrl();
-if (!storedApiBase) {
-  setApiBaseUrl(FUNCTION_API_PRESET);
-  setConnectionStatus("idle", "Auto Configured");
-  log("Auto-configured API URL for direct use from Live link.");
-}
-apiBaseInput.value = getApiBaseUrl();
+searchAssetsInput.addEventListener("input", () => {
+  renderAssets(getFilteredAssets());
+});
 
-testConnectionButton.addEventListener("click", async () => {
-  try {
-    setButtonBusy(testConnectionButton, true, "Testing...", "Test Connection");
-    await fetchAssets();
-  } catch (error) {
-    setConnectionStatus("error", "Connection Failed");
-    log(getErrorMessage(error));
-  } finally {
-    setButtonBusy(testConnectionButton, false, "Testing...", "Test Connection");
-  }
+filterTypeSelect.addEventListener("change", () => {
+  renderAssets(getFilteredAssets());
 });
 
 clearLogButton.addEventListener("click", () => {
   logOutput.textContent = "";
 });
 
-useFunctionApiButton.addEventListener("click", () => {
-  apiBaseInput.value = FUNCTION_API_PRESET;
-  saveCurrentApiUrl();
+document.getElementById("assetFile").addEventListener("change", (event) => {
+  const input = event.target;
+  if (!(input instanceof HTMLInputElement)) return;
+  selectedFileText.textContent = input.files && input.files[0] ? input.files[0].name : "No file selected";
 });
 
-useLogicAppButton.addEventListener("click", () => {
-  apiBaseInput.value = LOGIC_APP_PRESET;
-  saveCurrentApiUrl();
-});
-
-if (getApiBaseUrl()) {
+if (API_BASE_URL) {
+  setConnectionStatus("idle", "Auto Configured");
+  log("API auto-configured and connected via Azure Logic App.");
   fetchAssets().catch((error) => {
     setConnectionStatus("error", "Connection Failed");
     log(getErrorMessage(error));
