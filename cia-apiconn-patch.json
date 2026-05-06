@@ -6,14 +6,9 @@
       "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
       "contentVersion": "1.0.0.0",
       "parameters": {
-        "backendBaseUrl": {
-          "type": "String",
-          "defaultValue": "https://cloudshareapiasbin2.azurewebsites.net/api/assets"
-        },
-        "$connections": {
-          "type": "Object",
-          "defaultValue": {}
-        }
+        "backendBaseUrl": { "type": "String", "defaultValue": "https://cloudshareapiasbin2.azurewebsites.net/api/assets" },
+        "cosmosEndpoint": { "type": "String", "defaultValue": "https://cloudshare2-cosmos-kgfse5likaolk.documents.azure.com:443/" },
+        "$connections": { "type": "Object", "defaultValue": {} }
       },
       "triggers": {
         "manual": {
@@ -35,21 +30,20 @@
         }
       },
       "actions": {
+        "cosmos_endpoint_reference": { "type": "Compose", "inputs": "@parameters('cosmosEndpoint')" },
         "create_individual_asset_via_connection": {
           "type": "ApiConnection",
+          "runAfter": { "cosmos_endpoint_reference": ["Succeeded"] },
           "inputs": {
             "method": "post",
             "path": "/invokehttprequest",
-            "host": {
-              "connection": {
-                "name": "@parameters('$connections')['webcontents']['connectionId']"
-              }
-            },
+            "host": { "connection": { "name": "@parameters('$connections')['webcontents']['connectionId']" } },
             "body": {
               "method": "POST",
               "uri": "@parameters('backendBaseUrl')",
               "headers": {
-                "x-origin": "cia"
+                "x-origin": "cia",
+                "x-cosmos-endpoint": "@outputs('cosmos_endpoint_reference')"
               },
               "body": "@triggerBody()"
             }
@@ -58,9 +52,7 @@
         "response": {
           "type": "Response",
           "kind": "Http",
-          "runAfter": {
-            "create_individual_asset_via_connection": ["Succeeded", "Failed"]
-          },
+          "runAfter": { "create_individual_asset_via_connection": ["Succeeded", "Failed"] },
           "inputs": {
             "statusCode": "@{coalesce(body('create_individual_asset_via_connection')?['statusCode'], 200)}",
             "body": "@{coalesce(body('create_individual_asset_via_connection')?['body'], body('create_individual_asset_via_connection'))}"

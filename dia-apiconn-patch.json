@@ -6,14 +6,9 @@
       "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
       "contentVersion": "1.0.0.0",
       "parameters": {
-        "backendBaseUrl": {
-          "type": "String",
-          "defaultValue": "https://cloudshareapiasbin2.azurewebsites.net/api/assets"
-        },
-        "$connections": {
-          "type": "Object",
-          "defaultValue": {}
-        }
+        "backendBaseUrl": { "type": "String", "defaultValue": "https://cloudshareapiasbin2.azurewebsites.net/api/assets" },
+        "cosmosEndpoint": { "type": "String", "defaultValue": "https://cloudshare2-cosmos-kgfse5likaolk.documents.azure.com:443/" },
+        "$connections": { "type": "Object", "defaultValue": {} }
       },
       "triggers": {
         "manual": {
@@ -23,37 +18,32 @@
             "method": "POST",
             "schema": {
               "type": "object",
-              "properties": {
-                "assetId": { "type": "string" }
-              },
+              "properties": { "assetId": { "type": "string" } },
               "required": ["assetId"]
             }
           }
         }
       },
       "actions": {
+        "cosmos_endpoint_reference": { "type": "Compose", "inputs": "@parameters('cosmosEndpoint')" },
         "resolve_delete_url": {
           "type": "Compose",
+          "runAfter": { "cosmos_endpoint_reference": ["Succeeded"] },
           "inputs": "@{concat(parameters('backendBaseUrl'), '/', triggerBody()?['assetId'])}"
         },
         "delete_individual_asset_via_connection": {
           "type": "ApiConnection",
-          "runAfter": {
-            "resolve_delete_url": ["Succeeded"]
-          },
+          "runAfter": { "resolve_delete_url": ["Succeeded"] },
           "inputs": {
             "method": "post",
             "path": "/invokehttprequest",
-            "host": {
-              "connection": {
-                "name": "@parameters('$connections')['webcontents']['connectionId']"
-              }
-            },
+            "host": { "connection": { "name": "@parameters('$connections')['webcontents']['connectionId']" } },
             "body": {
               "method": "DELETE",
               "uri": "@outputs('resolve_delete_url')",
               "headers": {
-                "x-origin": "dia"
+                "x-origin": "dia",
+                "x-cosmos-endpoint": "@outputs('cosmos_endpoint_reference')"
               }
             }
           }
@@ -61,9 +51,7 @@
         "response": {
           "type": "Response",
           "kind": "Http",
-          "runAfter": {
-            "delete_individual_asset_via_connection": ["Succeeded", "Failed"]
-          },
+          "runAfter": { "delete_individual_asset_via_connection": ["Succeeded", "Failed"] },
           "inputs": {
             "statusCode": "@{coalesce(body('delete_individual_asset_via_connection')?['statusCode'], 200)}",
             "body": "@{coalesce(body('delete_individual_asset_via_connection')?['body'], body('delete_individual_asset_via_connection'))}"
