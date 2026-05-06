@@ -24,7 +24,7 @@ const CREATE_API_URL =
 const DELETE_API_URL =
   "https://prod-23.francecentral.logic.azure.com:443/workflows/9dc848d9327940539f8df0634e492f3a/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=HUBeLoVeTZrnRe9qzJbdHyeO07z0abfr3t9A2GitDXA";
 const API_BASE_URL = FUNCTION_API_FALLBACK;
-const SECONDARY_API_BASE_URL = LOGIC_APP_PRESET;
+const SECONDARY_API_BASE_URL = "";
 const PREVIEW_CACHE_KEY = "cloudshare.previewCache.v1";
 
 let allAssets = [];
