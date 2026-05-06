@@ -342,9 +342,13 @@ function renderAssets(assets) {
       tags.length > 0 ? tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("") : '<span class="tag">No tags</span>';
     const type = classifyAsset(asset.contentType);
     const previewSrc = asset.previewDataUrl || asset.blobUrl || "";
+    const previewOpenUrl = asset.blobUrl || previewSrc;
     const previewHtml =
       isLikelyImageAsset(asset) && previewSrc
-        ? `<img class="asset-preview" src="${escapeHtml(previewSrc)}" alt="${escapeHtml(asset.name || "Asset preview")}" loading="lazy" onerror="this.style.display='none'" />`
+        ? `<a class="asset-preview-link" href="${escapeHtml(previewOpenUrl)}" target="_blank" rel="noreferrer" title="Open preview">
+             <img class="asset-preview" src="${escapeHtml(previewSrc)}" alt="${escapeHtml(asset.name || "Asset preview")}" loading="lazy" onerror="this.style.display='none'" />
+           </a>
+           <a class="asset-link" href="${escapeHtml(previewOpenUrl)}" target="_blank" rel="noreferrer">Open Preview</a>`
         : "";
 
     item.innerHTML = `

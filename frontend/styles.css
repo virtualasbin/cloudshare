@@ -300,6 +300,17 @@ button:disabled {
   background: #070f20;
 }
 
+.asset-preview-link {
+  display: block;
+  line-height: 0;
+  border-radius: 8px;
+}
+
+.asset-preview-link:focus-visible {
+  outline: 2px solid #8eb2ff;
+  outline-offset: 2px;
+}
+
 .asset-id {
   font-family: Consolas, "Courier New", monospace;
 }
