@@ -342,7 +342,9 @@ function renderAssets(assets) {
       tags.length > 0 ? tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("") : '<span class="tag">No tags</span>';
     const type = classifyAsset(asset.contentType);
     const previewSrc = asset.previewDataUrl || asset.blobUrl || "";
-    const previewOpenUrl = asset.blobUrl || previewSrc;
+    const signedBlobUrl = typeof asset.blobUrl === "string" && asset.blobUrl.includes("sig=") ? asset.blobUrl : "";
+    const previewOpenUrl = asset.previewDataUrl || signedBlobUrl || asset.blobUrl || "";
+    const blobOpenUrl = signedBlobUrl || asset.previewDataUrl || asset.blobUrl || "#";
     const previewHtml =
       isLikelyImageAsset(asset) && previewSrc
         ? `<a class="asset-preview-link" href="${escapeHtml(previewOpenUrl)}" target="_blank" rel="noreferrer" title="Open preview">
@@ -363,7 +365,7 @@ function renderAssets(assets) {
         <span><strong>Updated:</strong> ${formatDate(asset.updatedAt || asset.createdAt)}</span>
       </div>
       <div class="tag-list">${tagsHtml}</div>
-      <a class="asset-link" href="${escapeHtml(asset.blobUrl || "#")}" target="_blank" rel="noreferrer">Open Blob</a>
+      <a class="asset-link" href="${escapeHtml(blobOpenUrl)}" target="_blank" rel="noreferrer">Open Blob</a>
       <div class="asset-actions">
         <button class="button-secondary" data-action="edit" data-id="${escapeHtml(asset.id || "")}">Edit</button>
         <button class="danger" data-action="delete" data-id="${escapeHtml(asset.id || "")}">Delete</button>
