@@ -14,16 +14,21 @@ const updateButton = document.getElementById("updateButton");
 const useFunctionApiButton = document.getElementById("useFunctionApi");
 const useLogicAppButton = document.getElementById("useLogicApp");
 
+const API_STORAGE_KEY = "cloudshare-api-base-url";
 const FUNCTION_API_PRESET = "https://cloudshareapiasbin2.azurewebsites.net/api/assets";
 const LOGIC_APP_PRESET =
-  "https://prod-01.francecentral.logic.azure.com:443/workflows/95aae4a30eb141e985bd2c62e31aef68/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=AEIp26i5qpWf63OFeJgISaiygdVUOm4iYPOC9auen1g";
+  "https://prod-05.francecentral.logic.azure.com:443/workflows/0a72ffe9b8ea4a6da70632a1b94d677b/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=oDsx8V2T9ubeU8b0-DMPaMqgeY76Z8Mt3k-6BeUSqzY";
+
+function getStoredApiBaseUrl() {
+  return localStorage.getItem(API_STORAGE_KEY) || "";
+}
 
 function getApiBaseUrl() {
-  return localStorage.getItem("cloudshare-api-base-url") || "";
+  return getStoredApiBaseUrl() || FUNCTION_API_PRESET;
 }
 
 function setApiBaseUrl(url) {
-  localStorage.setItem("cloudshare-api-base-url", url);
+  localStorage.setItem(API_STORAGE_KEY, url);
 }
 
 function log(message) {
@@ -334,6 +339,12 @@ assetList.addEventListener("click", async (event) => {
   }
 });
 
+const storedApiBase = getStoredApiBaseUrl();
+if (!storedApiBase) {
+  setApiBaseUrl(FUNCTION_API_PRESET);
+  setConnectionStatus("idle", "Auto Configured");
+  log("Auto-configured API URL for direct use from Live link.");
+}
 apiBaseInput.value = getApiBaseUrl();
 
 testConnectionButton.addEventListener("click", async () => {

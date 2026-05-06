@@ -6,6 +6,8 @@ Cloud-native coursework project that implements an Asset/Multimedia sharing API 
 
 [https://cloudsharewebasbin2.azurewebsites.net](https://cloudsharewebasbin2.azurewebsites.net)
 
+Open the live URL and use directly. The frontend is preconfigured with the deployed API, so no extra URL setup is required for upload, edit, and delete.
+
 ## Overview
 
 This repository contains:

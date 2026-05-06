@@ -32,36 +32,70 @@
   "actions": {
     "resolve_backend_url": {
       "type": "Compose",
-      "inputs": "@{if(empty(coalesce(triggerOutputs()['queries']?['assetId'], triggerBody()?['assetId'])), parameters('backendBaseUrl'), concat(parameters('backendBaseUrl'), '/', coalesce(triggerOutputs()['queries']?['assetId'], triggerBody()?['assetId'])))}"
+      "inputs": "@{if(empty(coalesce(triggerOutputs()?['queries']?['assetId'], triggerBody()?['assetId'])), parameters('backendBaseUrl'), concat(parameters('backendBaseUrl'), '/', coalesce(triggerOutputs()?['queries']?['assetId'], triggerBody()?['assetId'])))}"
     },
-    "invoke_backend_api": {
-      "type": "Http",
+    "route_by_method": {
+      "type": "If",
       "runAfter": {
         "resolve_backend_url": [
           "Succeeded"
         ]
       },
-      "inputs": {
-        "method": "@coalesce(triggerBody()?['method'], 'GET')",
-        "uri": "@outputs('resolve_backend_url')",
-        "headers": {
-          "x-origin": "logic-app"
+      "expression": "@equals(toUpper(coalesce(triggerBody()?['method'], 'GET')), 'GET')",
+      "actions": {
+        "invoke_backend_api_get": {
+          "type": "Http",
+          "inputs": {
+            "method": "GET",
+            "uri": "@outputs('resolve_backend_url')",
+            "headers": {
+              "x-origin": "logic-app"
+            }
+          }
         },
-        "body": "@coalesce(triggerBody()?['payload'], triggerBody())"
-      }
-    },
-    "response_to_client": {
-      "type": "Response",
-      "kind": "Http",
-      "runAfter": {
-        "invoke_backend_api": [
-          "Succeeded",
-          "Failed"
-        ]
+        "response_get": {
+          "type": "Response",
+          "kind": "Http",
+          "runAfter": {
+            "invoke_backend_api_get": [
+              "Succeeded",
+              "Failed"
+            ]
+          },
+          "inputs": {
+            "statusCode": "@outputs('invoke_backend_api_get')['statusCode']",
+            "body": "@body('invoke_backend_api_get')"
+          }
+        }
       },
-      "inputs": {
-        "statusCode": "@outputs('invoke_backend_api')['statusCode']",
-        "body": "@body('invoke_backend_api')"
+      "else": {
+        "actions": {
+          "invoke_backend_api_write": {
+            "type": "Http",
+            "inputs": {
+              "method": "@coalesce(triggerBody()?['method'], 'POST')",
+              "uri": "@outputs('resolve_backend_url')",
+              "headers": {
+                "x-origin": "logic-app"
+              },
+              "body": "@coalesce(triggerBody()?['payload'], triggerBody())"
+            }
+          },
+          "response_write": {
+            "type": "Response",
+            "kind": "Http",
+            "runAfter": {
+              "invoke_backend_api_write": [
+                "Succeeded",
+                "Failed"
+              ]
+            },
+            "inputs": {
+              "statusCode": "@outputs('invoke_backend_api_write')['statusCode']",
+              "body": "@body('invoke_backend_api_write')"
+            }
+          }
+        }
       }
     }
   },
