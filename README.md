@@ -2,7 +2,9 @@
 
 Cloud-native coursework project that implements an Asset/Multimedia sharing API and frontend on Azure.
 
-[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen?style=for-the-badge)](https://cloudsharewebasbin2.azurewebsites.net)
+## Live URL
+
+[https://cloudsharewebasbin2.azurewebsites.net](https://cloudsharewebasbin2.azurewebsites.net)
 
 ## Overview
 
