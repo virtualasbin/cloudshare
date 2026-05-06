@@ -45,6 +45,16 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+function attachReadableUrl(record: AssetRecord): AssetRecord {
+  if (!blobService) {
+    return record;
+  }
+  return {
+    ...record,
+    blobUrl: blobService.getReadUrl(record.blobPath)
+  };
+}
+
 async function createAsset(payload: CreateAssetRequest): Promise<AssetRecord> {
   if (!blobService || !repository) {
     throw new Error("Services not initialized");
@@ -108,14 +118,14 @@ async function assetsApi(request: HttpRequest, _context: InvocationContext): Pro
 
     if (request.method === "GET" && segments.length === 0) {
       const list = await repository.list();
-      return jsonResponse(200, list);
+      return jsonResponse(200, list.map(attachReadableUrl));
     }
 
     if (request.method === "POST" && segments.length === 0) {
       const body = await parseJson<CreateAssetRequest>(request);
       const payload = createAssetSchema.parse(body);
       const created = await createAsset(payload);
-      return jsonResponse(201, created);
+      return jsonResponse(201, attachReadableUrl(created));
     }
 
     if (segments.length === 1) {
@@ -126,14 +136,14 @@ async function assetsApi(request: HttpRequest, _context: InvocationContext): Pro
       }
 
       if (request.method === "GET") {
-        return jsonResponse(200, existing);
+        return jsonResponse(200, attachReadableUrl(existing));
       }
 
       if (request.method === "PUT") {
         const body = await parseJson<UpdateAssetRequest>(request);
         const payload = updateAssetSchema.parse(body);
         const updated = await updateAsset(existing, payload);
-        return jsonResponse(200, updated);
+        return jsonResponse(200, attachReadableUrl(updated));
       }
 
       if (request.method === "DELETE") {
